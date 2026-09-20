@@ -1,96 +1,276 @@
-import React, {useState} from "react";
-export default (props) => {
-	const [input1, onChangeInput1] = useState('');
-	const [input2, onChangeInput2] = useState('');
-	const [input3, onChangeInput3] = useState('');
-	const [input4, onChangeInput4] = useState('');
-	return (
-		<div className="flex flex-col bg-white">
-			<div className="self-stretch bg-slate-100 overflow-hidden">
-				<div className="flex justify-between items-center self-stretch bg-white py-5 px-12">
-					<img
-						src={"https://storage.googleapis.com/tagjs-prod.appspot.com/v1/Lv4nZvy440/9ltagphy_expires_30_days.png"} 
-						className="w-[81px] h-[81px] object-fill"
-					/>
-					<div className="flex shrink-0 items-center bg-white gap-[27px]">
-						<span className="text-slate-500 text-sm" >
-							Especialidades
-						</span>
-						<span className="text-slate-500 text-sm" >
-							Mis citas
-						</span>
-						<span className="text-slate-500 text-sm" >
-							Ayuda
-						</span>
-					</div>
-				</div>
-				<div className="flex flex-col items-center self-stretch bg-white py-16">
-					<div className="flex flex-col items-start bg-white w-[460px] p-10 gap-5 rounded-xl" 
-						style={{
-							boxShadow: "0px 8px 24px #0F162812"
-						}}>
-						<span className="text-slate-900 text-2xl font-bold" >
-							Crear cuenta
-						</span>
-						<span className="text-slate-500 text-sm" >
-							Regístrate para gestionar tus citas médicas
-						</span>
-						<div className="flex flex-col items-start self-stretch bg-white gap-1.5">
-							<span className="text-slate-900 text-[13px]" >
-								Nombre completo
-							</span>
-							<input
-								placeholder="Ej. Ana María Pérez"
-								value={input1}
-								onChange={(event)=>onChangeInput1(event.target.value)}
-								className="self-stretch text-slate-500 bg-white text-sm py-3 px-3.5 rounded-lg border border-solid border-slate-200"
-							/>
-						</div>
-						<div className="flex flex-col items-start self-stretch bg-white gap-1.5">
-							<span className="text-slate-900 text-[13px]" >
-								Correo electrónico
-							</span>
-							<input
-								placeholder="nombre@correo.com"
-								value={input2}
-								onChange={(event)=>onChangeInput2(event.target.value)}
-								className="self-stretch text-slate-500 bg-white text-sm py-3 px-3.5 rounded-lg border border-solid border-slate-200"
-							/>
-						</div>
-						<div className="flex flex-col items-start self-stretch bg-white gap-1.5">
-							<span className="text-slate-900 text-[13px]" >
-								Contraseña
-							</span>
-							<input
-								placeholder="Mínimo 8 caracteres"
-								value={input3}
-								onChange={(event)=>onChangeInput3(event.target.value)}
-								className="self-stretch text-slate-500 bg-white text-sm py-3 px-3.5 rounded-lg border border-solid border-slate-200"
-							/>
-						</div>
-						<div className="flex flex-col items-start self-stretch bg-white gap-1.5">
-							<span className="text-slate-900 text-[13px]" >
-								Confirmar contraseña
-							</span>
-							<input
-								placeholder="Repite tu contraseña"
-								value={input4}
-								onChange={(event)=>onChangeInput4(event.target.value)}
-								className="self-stretch text-slate-500 bg-white text-sm py-3 px-3.5 rounded-lg border border-solid border-slate-200"
-							/>
-						</div>
-						<button className="flex flex-col items-center self-stretch bg-[#1D6070] text-left py-3.5 rounded-lg border-0"
-							onClick={()=>alert("Pressed!")}>
-							<span className="text-white text-[15px] font-bold" >
-								Crear cuenta
-							</span>
-						</button>
-						<span className="text-[#1D6070] text-[13px]" >
-							¿Ya tienes cuenta? Inicia sesión
-						</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	)
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import logo from '../../assets/logo-vitalis.jpg';
+import FormField from '../../components/FormField';
+import { ApiError, getErrorMessage } from '../../services/api';
+import { registrarUsuario } from '../../services/usuarios.service';
+import type { UsuarioResponse } from '../../types/usuario';
+import {
+  CAMPOS_REGISTRO,
+  MIN_CONTRASENA,
+  VALORES_INICIALES,
+  construirSolicitud,
+  esCampoRegistro,
+  esCorreoDuplicado,
+  validarRegistro,
+  type CampoRegistro,
+  type ErroresRegistro,
+  type ValoresRegistro,
+} from './validacion';
+
+type Estado = 'editando' | 'enviando' | 'exito';
+
+// HU-01 — Registro de usuario (POST /api/usuarios)
+export default function HU01RegistroDeCliente() {
+  const [valores, setValores] = useState<ValoresRegistro>(VALORES_INICIALES);
+  const [errores, setErrores] = useState<ErroresRegistro>({});
+  const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+  const [correoDuplicado, setCorreoDuplicado] = useState(false);
+  const [estado, setEstado] = useState<Estado>('editando');
+  const [usuarioCreado, setUsuarioCreado] = useState<UsuarioResponse | null>(null);
+
+  const controladorRef = useRef<AbortController | null>(null);
+  const exitoRef = useRef<HTMLDivElement>(null);
+
+  // Al salir de la pantalla se cancela cualquier petición en curso
+  useEffect(() => () => controladorRef.current?.abort(), []);
+
+  // Al confirmarse el registro, el foco pasa al mensaje para que lo lean los lectores de pantalla
+  useEffect(() => {
+    if (estado === 'exito') exitoRef.current?.focus();
+  }, [estado]);
+
+  const enviando = estado === 'enviando';
+
+  function cambiarValor(campo: CampoRegistro, valor: string) {
+    setValores((previo) => ({ ...previo, [campo]: valor }));
+    setErrores((previo) => {
+      if (!previo[campo]) return previo;
+      const siguiente = { ...previo };
+      delete siguiente[campo];
+      return siguiente;
+    });
+    if (campo === 'correo') setCorreoDuplicado(false);
+    setErrorGeneral(null);
+  }
+
+  function enfocarPrimerError(conErrores: ErroresRegistro) {
+    const primero = CAMPOS_REGISTRO.find((campo) => conErrores[campo]);
+    if (primero) document.getElementById(`registro-${primero}`)?.focus();
+  }
+
+  async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (enviando) return;
+
+    setErrorGeneral(null);
+    setCorreoDuplicado(false);
+
+    const erroresCliente = validarRegistro(valores);
+    if (Object.keys(erroresCliente).length > 0) {
+      setErrores(erroresCliente);
+      enfocarPrimerError(erroresCliente);
+      return;
+    }
+    setErrores({});
+
+    controladorRef.current?.abort();
+    const controlador = new AbortController();
+    controladorRef.current = controlador;
+    setEstado('enviando');
+
+    try {
+      const creado = await registrarUsuario(construirSolicitud(valores), controlador.signal);
+      setUsuarioCreado(creado);
+      setValores(VALORES_INICIALES);
+      setEstado('exito');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setEstado('editando');
+
+      // Errores por campo que responde el servidor: { campo: "mensaje" }
+      if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
+        const delServidor: ErroresRegistro = {};
+        for (const [clave, mensaje] of Object.entries(error.fieldErrors)) {
+          if (esCampoRegistro(clave)) delServidor[clave] = mensaje;
+        }
+        if (Object.keys(delServidor).length > 0) {
+          setErrores(delServidor);
+          enfocarPrimerError(delServidor);
+          return;
+        }
+      }
+
+      const mensaje = getErrorMessage(error);
+      if (esCorreoDuplicado(mensaje)) {
+        const conCorreo: ErroresRegistro = { correo: 'Ya existe una cuenta con este correo.' };
+        setCorreoDuplicado(true);
+        setErrores(conCorreo);
+        enfocarPrimerError(conCorreo);
+        return;
+      }
+      setErrorGeneral(mensaje);
+    }
+  }
+
+  return (
+    <div className="flex flex-col bg-white min-h-screen">
+      <header className="flex flex-wrap justify-between items-center gap-4 bg-white py-5 px-4 sm:px-12">
+        <img
+          src={logo}
+          alt="Vitalis"
+          className="w-[81px] h-[81px] object-fill"
+        />
+        <div className="flex flex-wrap items-center gap-6">
+          <span className="text-slate-500 text-sm font-medium">Especialidades</span>
+          <span className="text-slate-500 text-sm font-medium">Mis citas</span>
+          <span className="text-slate-500 text-sm font-medium">Ayuda</span>
+        </div>
+      </header>
+
+      <main className="flex flex-col items-center flex-1 bg-white py-10 px-4 sm:py-16">
+        {estado === 'exito' && usuarioCreado ? (
+          <div
+            ref={exitoRef}
+            tabIndex={-1}
+            role="status"
+            className="flex flex-col items-start bg-white w-full max-w-[460px] p-6 sm:p-10 gap-5 rounded-xl shadow-[0px_8px_24px_rgba(15,23,41,0.08)] focus:outline-none"
+          >
+            <h1 className="text-slate-900 text-2xl font-bold">¡Cuenta creada!</h1>
+            <p className="text-slate-700 text-sm">
+              Registramos la cuenta de {usuarioCreado.nombre} {usuarioCreado.apellido} con el correo{' '}
+              <strong>{usuarioCreado.correo}</strong>. Ya puedes iniciar sesión para gestionar tus citas médicas.
+            </p>
+            <Link
+              to="/login"
+              className="self-stretch text-center bg-[#1D6070] text-white text-[15px] font-semibold leading-[normal] py-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070]"
+            >
+              Ir a iniciar sesión
+            </Link>
+          </div>
+        ) : (
+          <form
+            onSubmit={manejarEnvio}
+            noValidate
+            aria-busy={enviando}
+            aria-labelledby="registro-titulo"
+            className="flex flex-col items-start bg-white w-full max-w-[460px] p-6 sm:p-10 gap-5 rounded-xl shadow-[0px_8px_24px_rgba(15,23,41,0.08)]"
+          >
+            <div className="flex flex-col gap-2">
+              <h1 id="registro-titulo" className="text-slate-900 text-2xl font-bold">
+                Crear cuenta
+              </h1>
+              <p className="text-slate-500 text-sm">Regístrate para gestionar tus citas médicas</p>
+              <p className="text-slate-600 text-xs">Los campos marcados con * son obligatorios.</p>
+            </div>
+
+            {errorGeneral && (
+              <p role="alert" className="self-stretch text-red-700 text-sm border border-red-700 rounded-lg p-3">
+                {errorGeneral}
+              </p>
+            )}
+
+            <FormField
+              id="registro-nombre"
+              label="Nombre"
+              value={valores.nombre}
+              onChange={(valor) => cambiarValor('nombre', valor)}
+              error={errores.nombre}
+              placeholder="Ej. Ana María"
+              autoComplete="given-name"
+              required
+              readOnly={enviando}
+            />
+            <FormField
+              id="registro-apellido"
+              label="Apellido"
+              value={valores.apellido}
+              onChange={(valor) => cambiarValor('apellido', valor)}
+              error={errores.apellido}
+              placeholder="Ej. Pérez"
+              autoComplete="family-name"
+              required
+              readOnly={enviando}
+            />
+            <FormField
+              id="registro-correo"
+              label="Correo electrónico"
+              type="email"
+              value={valores.correo}
+              onChange={(valor) => cambiarValor('correo', valor)}
+              error={
+                errores.correo &&
+                (correoDuplicado ? (
+                  <>
+                    {errores.correo}{' '}
+                    <Link to="/login" className="underline font-medium">
+                      ¿Deseas iniciar sesión?
+                    </Link>
+                  </>
+                ) : (
+                  errores.correo
+                ))
+              }
+              placeholder="nombre@correo.com"
+              autoComplete="email"
+              inputMode="email"
+              required
+              readOnly={enviando}
+            />
+            <FormField
+              id="registro-telefono"
+              label="Teléfono"
+              type="tel"
+              value={valores.telefono}
+              onChange={(valor) => cambiarValor('telefono', valor)}
+              error={errores.telefono}
+              placeholder="Ej. 3001234567"
+              autoComplete="tel"
+              inputMode="tel"
+              readOnly={enviando}
+            />
+            <FormField
+              id="registro-contrasena"
+              label="Contraseña"
+              type="password"
+              value={valores.contrasena}
+              onChange={(valor) => cambiarValor('contrasena', valor)}
+              error={errores.contrasena}
+              hint={`Mínimo ${MIN_CONTRASENA} caracteres.`}
+              autoComplete="new-password"
+              required
+              readOnly={enviando}
+            />
+            <FormField
+              id="registro-confirmarContrasena"
+              label="Confirmar contraseña"
+              type="password"
+              value={valores.confirmarContrasena}
+              onChange={(valor) => cambiarValor('confirmarContrasena', valor)}
+              error={errores.confirmarContrasena}
+              placeholder="Repite tu contraseña"
+              autoComplete="new-password"
+              required
+              readOnly={enviando}
+            />
+
+            <button
+              type="submit"
+              aria-disabled={enviando}
+              className="self-stretch bg-[#1D6070] text-white text-[15px] font-semibold leading-[normal] py-3.5 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070] aria-disabled:opacity-60 aria-disabled:cursor-not-allowed"
+            >
+              {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
+            </button>
+
+            <p className="text-[#1D6070] text-[13px] font-medium">
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" className="text-[#1D6070] underline font-medium">
+                Inicia sesión
+              </Link>
+            </p>
+          </form>
+        )}
+      </main>
+    </div>
+  );
 }
