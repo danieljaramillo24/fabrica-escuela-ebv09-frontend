@@ -1,0 +1,15 @@
+# Dependencias y build
+node_modules/
+dist/
+
+# Secretos: nunca versionar (CodeFactory 6 y 7.3). Usar .env.example como plantilla
+.env
+.env.*
+!.env.example
+
+# Logs y editores
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+.DS_Store
