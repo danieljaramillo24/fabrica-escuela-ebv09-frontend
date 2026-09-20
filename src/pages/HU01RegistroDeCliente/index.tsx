@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/logo-vitalis.jpg';
 import FormField from '../../components/FormField';
+import { useTitulo } from '../../hooks/useTitulo';
+import { RUTAS } from '../../routes/paths';
 import { ApiError, getErrorMessage } from '../../services/api';
 import { registrarUsuario } from '../../services/usuarios.service';
 import type { UsuarioResponse } from '../../types/usuario';
@@ -20,8 +21,10 @@ import {
 
 type Estado = 'editando' | 'enviando' | 'exito';
 
-// HU-01 — Registro de usuario (POST /api/usuarios)
+// HU-01 — Registro de usuario (POST /api/usuarios). La cabecera y el <main> los pone <Layout>.
 export default function HU01RegistroDeCliente() {
+  useTitulo('Crear cuenta');
+
   const [valores, setValores] = useState<ValoresRegistro>(VALORES_INICIALES);
   const [errores, setErrores] = useState<ErroresRegistro>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
@@ -114,163 +117,148 @@ export default function HU01RegistroDeCliente() {
   }
 
   return (
-    <div className="flex flex-col bg-white min-h-screen">
-      <header className="flex flex-wrap justify-between items-center gap-4 bg-white py-5 px-4 sm:px-12">
-        <img
-          src={logo}
-          alt="Vitalis"
-          className="w-[81px] h-[81px] object-fill"
-        />
-        <div className="flex flex-wrap items-center gap-6">
-          <span className="text-slate-500 text-sm font-medium">Especialidades</span>
-          <span className="text-slate-500 text-sm font-medium">Mis citas</span>
-          <span className="text-slate-500 text-sm font-medium">Ayuda</span>
+    <div className="flex flex-col items-center bg-white py-10 px-4 sm:py-16">
+      {estado === 'exito' && usuarioCreado ? (
+        <div
+          ref={exitoRef}
+          tabIndex={-1}
+          role="status"
+          className="flex flex-col items-start bg-white w-full max-w-[460px] p-6 sm:p-10 gap-5 rounded-xl shadow-[0px_8px_24px_rgba(15,23,41,0.08)] focus:outline-none"
+        >
+          <h1 className="text-slate-900 text-2xl font-bold">¡Cuenta creada!</h1>
+          <p className="text-slate-700 text-sm">
+            Registramos la cuenta de {usuarioCreado.nombre} {usuarioCreado.apellido} con el correo{' '}
+            <strong>{usuarioCreado.correo}</strong>. Ya puedes iniciar sesión para gestionar tus citas médicas.
+          </p>
+          <Link
+            to={RUTAS.login}
+            className="self-stretch text-center bg-[#1D6070] text-white text-[15px] font-semibold leading-[normal] py-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070]"
+          >
+            Ir a iniciar sesión
+          </Link>
         </div>
-      </header>
-
-      <main className="flex flex-col items-center flex-1 bg-white py-10 px-4 sm:py-16">
-        {estado === 'exito' && usuarioCreado ? (
-          <div
-            ref={exitoRef}
-            tabIndex={-1}
-            role="status"
-            className="flex flex-col items-start bg-white w-full max-w-[460px] p-6 sm:p-10 gap-5 rounded-xl shadow-[0px_8px_24px_rgba(15,23,41,0.08)] focus:outline-none"
-          >
-            <h1 className="text-slate-900 text-2xl font-bold">¡Cuenta creada!</h1>
-            <p className="text-slate-700 text-sm">
-              Registramos la cuenta de {usuarioCreado.nombre} {usuarioCreado.apellido} con el correo{' '}
-              <strong>{usuarioCreado.correo}</strong>. Ya puedes iniciar sesión para gestionar tus citas médicas.
-            </p>
-            <Link
-              to="/login"
-              className="self-stretch text-center bg-[#1D6070] text-white text-[15px] font-semibold leading-[normal] py-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070]"
-            >
-              Ir a iniciar sesión
-            </Link>
+      ) : (
+        <form
+          onSubmit={manejarEnvio}
+          noValidate
+          aria-busy={enviando}
+          aria-labelledby="registro-titulo"
+          className="flex flex-col items-start bg-white w-full max-w-[460px] p-6 sm:p-10 gap-5 rounded-xl shadow-[0px_8px_24px_rgba(15,23,41,0.08)]"
+        >
+          <div className="flex flex-col gap-2">
+            <h1 id="registro-titulo" className="text-slate-900 text-2xl font-bold">
+              Crear cuenta
+            </h1>
+            <p className="text-slate-500 text-sm">Regístrate para gestionar tus citas médicas</p>
+            <p className="text-slate-600 text-xs">Los campos marcados con * son obligatorios.</p>
           </div>
-        ) : (
-          <form
-            onSubmit={manejarEnvio}
-            noValidate
-            aria-busy={enviando}
-            aria-labelledby="registro-titulo"
-            className="flex flex-col items-start bg-white w-full max-w-[460px] p-6 sm:p-10 gap-5 rounded-xl shadow-[0px_8px_24px_rgba(15,23,41,0.08)]"
-          >
-            <div className="flex flex-col gap-2">
-              <h1 id="registro-titulo" className="text-slate-900 text-2xl font-bold">
-                Crear cuenta
-              </h1>
-              <p className="text-slate-500 text-sm">Regístrate para gestionar tus citas médicas</p>
-              <p className="text-slate-600 text-xs">Los campos marcados con * son obligatorios.</p>
-            </div>
 
-            {errorGeneral && (
-              <p role="alert" className="self-stretch text-red-700 text-sm border border-red-700 rounded-lg p-3">
-                {errorGeneral}
-              </p>
-            )}
-
-            <FormField
-              id="registro-nombre"
-              label="Nombre"
-              value={valores.nombre}
-              onChange={(valor) => cambiarValor('nombre', valor)}
-              error={errores.nombre}
-              placeholder="Ej. Ana María"
-              autoComplete="given-name"
-              required
-              readOnly={enviando}
-            />
-            <FormField
-              id="registro-apellido"
-              label="Apellido"
-              value={valores.apellido}
-              onChange={(valor) => cambiarValor('apellido', valor)}
-              error={errores.apellido}
-              placeholder="Ej. Pérez"
-              autoComplete="family-name"
-              required
-              readOnly={enviando}
-            />
-            <FormField
-              id="registro-correo"
-              label="Correo electrónico"
-              type="email"
-              value={valores.correo}
-              onChange={(valor) => cambiarValor('correo', valor)}
-              error={
-                errores.correo &&
-                (correoDuplicado ? (
-                  <>
-                    {errores.correo}{' '}
-                    <Link to="/login" className="underline font-medium">
-                      ¿Deseas iniciar sesión?
-                    </Link>
-                  </>
-                ) : (
-                  errores.correo
-                ))
-              }
-              placeholder="nombre@correo.com"
-              autoComplete="email"
-              inputMode="email"
-              required
-              readOnly={enviando}
-            />
-            <FormField
-              id="registro-telefono"
-              label="Teléfono"
-              type="tel"
-              value={valores.telefono}
-              onChange={(valor) => cambiarValor('telefono', valor)}
-              error={errores.telefono}
-              placeholder="Ej. 3001234567"
-              autoComplete="tel"
-              inputMode="tel"
-              readOnly={enviando}
-            />
-            <FormField
-              id="registro-contrasena"
-              label="Contraseña"
-              type="password"
-              value={valores.contrasena}
-              onChange={(valor) => cambiarValor('contrasena', valor)}
-              error={errores.contrasena}
-              hint={`Mínimo ${MIN_CONTRASENA} caracteres.`}
-              autoComplete="new-password"
-              required
-              readOnly={enviando}
-            />
-            <FormField
-              id="registro-confirmarContrasena"
-              label="Confirmar contraseña"
-              type="password"
-              value={valores.confirmarContrasena}
-              onChange={(valor) => cambiarValor('confirmarContrasena', valor)}
-              error={errores.confirmarContrasena}
-              placeholder="Repite tu contraseña"
-              autoComplete="new-password"
-              required
-              readOnly={enviando}
-            />
-
-            <button
-              type="submit"
-              aria-disabled={enviando}
-              className="self-stretch bg-[#1D6070] text-white text-[15px] font-semibold leading-[normal] py-3.5 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070] aria-disabled:opacity-60 aria-disabled:cursor-not-allowed"
-            >
-              {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
-            </button>
-
-            <p className="text-[#1D6070] text-[13px] font-medium">
-              ¿Ya tienes cuenta?{' '}
-              <Link to="/login" className="text-[#1D6070] underline font-medium">
-                Inicia sesión
-              </Link>
+          {errorGeneral && (
+            <p role="alert" className="self-stretch text-red-700 text-sm border border-red-700 rounded-lg p-3">
+              {errorGeneral}
             </p>
-          </form>
-        )}
-      </main>
+          )}
+
+          <FormField
+            id="registro-nombre"
+            label="Nombre"
+            value={valores.nombre}
+            onChange={(valor) => cambiarValor('nombre', valor)}
+            error={errores.nombre}
+            placeholder="Ej. Ana María"
+            autoComplete="given-name"
+            required
+            readOnly={enviando}
+          />
+          <FormField
+            id="registro-apellido"
+            label="Apellido"
+            value={valores.apellido}
+            onChange={(valor) => cambiarValor('apellido', valor)}
+            error={errores.apellido}
+            placeholder="Ej. Pérez"
+            autoComplete="family-name"
+            required
+            readOnly={enviando}
+          />
+          <FormField
+            id="registro-correo"
+            label="Correo electrónico"
+            type="email"
+            value={valores.correo}
+            onChange={(valor) => cambiarValor('correo', valor)}
+            error={
+              errores.correo &&
+              (correoDuplicado ? (
+                <>
+                  {errores.correo}{' '}
+                  <Link to={RUTAS.login} className="underline font-medium">
+                    ¿Deseas iniciar sesión?
+                  </Link>
+                </>
+              ) : (
+                errores.correo
+              ))
+            }
+            placeholder="nombre@correo.com"
+            autoComplete="email"
+            inputMode="email"
+            required
+            readOnly={enviando}
+          />
+          <FormField
+            id="registro-telefono"
+            label="Teléfono"
+            type="tel"
+            value={valores.telefono}
+            onChange={(valor) => cambiarValor('telefono', valor)}
+            error={errores.telefono}
+            placeholder="Ej. 3001234567"
+            autoComplete="tel"
+            inputMode="tel"
+            readOnly={enviando}
+          />
+          <FormField
+            id="registro-contrasena"
+            label="Contraseña"
+            type="password"
+            value={valores.contrasena}
+            onChange={(valor) => cambiarValor('contrasena', valor)}
+            error={errores.contrasena}
+            hint={`Mínimo ${MIN_CONTRASENA} caracteres.`}
+            autoComplete="new-password"
+            required
+            readOnly={enviando}
+          />
+          <FormField
+            id="registro-confirmarContrasena"
+            label="Confirmar contraseña"
+            type="password"
+            value={valores.confirmarContrasena}
+            onChange={(valor) => cambiarValor('confirmarContrasena', valor)}
+            error={errores.confirmarContrasena}
+            placeholder="Repite tu contraseña"
+            autoComplete="new-password"
+            required
+            readOnly={enviando}
+          />
+
+          <button
+            type="submit"
+            aria-disabled={enviando}
+            className="self-stretch bg-[#1D6070] text-white text-[15px] font-semibold leading-[normal] py-3.5 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070] aria-disabled:opacity-60 aria-disabled:cursor-not-allowed"
+          >
+            {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
+          </button>
+
+          <p className="text-[#1D6070] text-[13px] font-medium">
+            ¿Ya tienes cuenta?{' '}
+            <Link to={RUTAS.login} className="text-[#1D6070] underline font-medium">
+              Inicia sesión
+            </Link>
+          </p>
+        </form>
+      )}
     </div>
   );
 }
