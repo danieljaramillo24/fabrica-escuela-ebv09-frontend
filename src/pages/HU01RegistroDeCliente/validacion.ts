@@ -1,4 +1,5 @@
 import type { RegistroRequest } from '../../types/usuario';
+import { esCorreoValido } from '../../utils/validaciones';
 
 // HU-01 — Registro de usuario. La validación en cliente mejora la experiencia,
 // pero NO reemplaza la del servidor (que sigue siendo la que manda).
@@ -36,8 +37,6 @@ export const VALORES_INICIALES: ValoresRegistro = {
 // Igual que @Size(min = 8) de UsuarioRequest en el backend
 export const MIN_CONTRASENA = 8;
 
-const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export function validarRegistro(valores: ValoresRegistro): ErroresRegistro {
   const errores: ErroresRegistro = {};
 
@@ -47,7 +46,7 @@ export function validarRegistro(valores: ValoresRegistro): ErroresRegistro {
   const correo = valores.correo.trim();
   if (!correo) {
     errores.correo = 'Ingresa tu correo electrónico.';
-  } else if (!FORMATO_CORREO.test(correo)) {
+  } else if (!esCorreoValido(correo)) {
     errores.correo = 'Revisa el formato del correo. Por ejemplo: nombre@correo.com.';
   }
 
