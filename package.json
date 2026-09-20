@@ -10,7 +10,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-icons": "^4.11.0",
-    "react-router-dom": "^6.21.1"
+    "react-router-dom": "^6.30.6"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.1",
