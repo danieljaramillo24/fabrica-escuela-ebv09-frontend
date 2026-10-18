@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import CasillaField from '../../components/CasillaField';
 import FormField from '../../components/FormField';
 import { useTitulo } from '../../hooks/useTitulo';
 import { RUTAS } from '../../routes/paths';
@@ -13,6 +14,7 @@ import {
   construirSolicitud,
   esCampoRegistro,
   esCorreoDuplicado,
+  validarAutorizacion,
   validarRegistro,
   type CampoRegistro,
   type ErroresRegistro,
@@ -28,6 +30,8 @@ export default function HU01RegistroDeCliente() {
   const [valores, setValores] = useState<ValoresRegistro>(VALORES_INICIALES);
   const [errores, setErrores] = useState<ErroresRegistro>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+  const [autoriza, setAutoriza] = useState(false);
+  const [errorAutorizacion, setErrorAutorizacion] = useState<string | undefined>();
   const [correoDuplicado, setCorreoDuplicado] = useState(false);
   const [estado, setEstado] = useState<Estado>('editando');
   const [usuarioCreado, setUsuarioCreado] = useState<UsuarioResponse | null>(null);
@@ -70,12 +74,16 @@ export default function HU01RegistroDeCliente() {
     setCorreoDuplicado(false);
 
     const erroresCliente = validarRegistro(valores);
-    if (Object.keys(erroresCliente).length > 0) {
+    const faltaAutorizacion = validarAutorizacion(autoriza);
+    if (Object.keys(erroresCliente).length > 0 || faltaAutorizacion) {
       setErrores(erroresCliente);
-      enfocarPrimerError(erroresCliente);
+      setErrorAutorizacion(faltaAutorizacion);
+      if (Object.keys(erroresCliente).length > 0) enfocarPrimerError(erroresCliente);
+      else document.getElementById('registro-autorizacion')?.focus();
       return;
     }
     setErrores({});
+    setErrorAutorizacion(undefined);
 
     controladorRef.current?.abort();
     const controlador = new AbortController();
@@ -83,9 +91,10 @@ export default function HU01RegistroDeCliente() {
     setEstado('enviando');
 
     try {
-      const creado = await registrarUsuario(construirSolicitud(valores), controlador.signal);
+      const creado = await registrarUsuario(construirSolicitud(valores, autoriza), controlador.signal);
       setUsuarioCreado(creado);
       setValores(VALORES_INICIALES);
+      setAutoriza(false);
       setEstado('exito');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -241,6 +250,19 @@ export default function HU01RegistroDeCliente() {
             autoComplete="new-password"
             required
             readOnly={enviando}
+          />
+
+          <CasillaField
+            id="registro-autorizacion"
+            label="Autorizo el tratamiento de mis datos personales y de salud para gestionar mis citas médicas."
+            checked={autoriza}
+            onChange={(marcada) => {
+              setAutoriza(marcada);
+              if (marcada) setErrorAutorizacion(undefined);
+            }}
+            error={errorAutorizacion}
+            required
+            disabled={enviando}
           />
 
           <button

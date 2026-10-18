@@ -89,7 +89,6 @@ export default function HU06RegistrarEspecialidad() {
     try {
       const guardada = await registrarEspecialidad(
         construirSolicitudEspecialidad(valores, sesion.idUsuario),
-        sesion.token,
         controlador.signal,
       );
       setCreada(guardada);
