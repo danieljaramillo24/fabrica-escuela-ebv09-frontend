@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
+import CargandoSesion from '../../components/CargandoSesion';
 import FormField from '../../components/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import { useTitulo } from '../../hooks/useTitulo';
@@ -20,7 +21,7 @@ import {
 export default function HU02InicioDeSesion() {
   useTitulo('Iniciar sesión');
 
-  const { sesion, iniciarSesion: abrirSesion } = useAuth();
+  const { sesion, verificando, avisoSesion, iniciarSesion: abrirSesion } = useAuth();
   const ubicacion = useLocation();
 
   const [valores, setValores] = useState<ValoresLogin>(VALORES_INICIALES_LOGIN);
@@ -35,7 +36,8 @@ export default function HU02InicioDeSesion() {
   // Ruta a la que se quería entrar antes de que pidiéramos iniciar sesión (ver <ProtectedRoute>)
   const desde = rutaInternaSegura((ubicacion.state as { desde?: unknown } | null)?.desde);
 
-  // Quien ya tiene sesión no necesita ver el formulario
+  // Quien ya tiene sesión no necesita ver el formulario (y hasta confirmarlo no se muestra)
+  if (verificando) return <CargandoSesion />;
   if (sesion) return <Navigate to={desde ?? rutaInicioPorRol(sesion.rol)} replace />;
 
   function cambiarValor(campo: CampoLogin, valor: string) {
@@ -78,12 +80,7 @@ export default function HU02InicioDeSesion() {
         controlador.signal,
       );
       // Al guardar la sesión esta pantalla redirige sola (ver arriba)
-      abrirSesion({
-        token: respuesta.token,
-        idUsuario: respuesta.idUsuario,
-        nombre: respuesta.nombre,
-        rol: respuesta.rol,
-      });
+      abrirSesion({ idUsuario: respuesta.idUsuario, nombre: respuesta.nombre, rol: respuesta.rol });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       setEnviando(false);
@@ -109,6 +106,12 @@ export default function HU02InicioDeSesion() {
           <p className="text-slate-500 text-sm">Accede a las funciones de la plataforma</p>
           {desde && <p className="text-slate-600 text-xs">Inicia sesión para continuar.</p>}
         </div>
+
+        {avisoSesion && !errorGeneral && (
+          <p role="status" className="self-stretch text-slate-900 text-sm border border-slate-500 rounded-lg p-3">
+            {avisoSesion}
+          </p>
+        )}
 
         {errorGeneral && (
           <p role="alert" className="self-stretch text-red-700 text-sm border border-red-700 rounded-lg p-3">
