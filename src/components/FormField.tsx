@@ -21,7 +21,8 @@ interface FormFieldProps {
   readOnly?: boolean;
   disabled?: boolean;
   maxLength?: number;
-  min?: number;
+  /** Número mínimo, o fecha mínima (AAAA-MM-DD) en campos de tipo date */
+  min?: number | string;
   step?: number;
 }
 

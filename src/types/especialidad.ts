@@ -21,3 +21,10 @@ export interface EspecialidadRequest {
   duracionMinutos: number;
   idEspecialista: number;
 }
+
+/** HU-07 — PUT /api/especialidades/{id}: solo el especialista dueño puede editar sus especialidades */
+export interface EspecialidadUpdate {
+  nombreEspecialidad: string;
+  descripcion: string;
+  duracionMinutos: number;
+}

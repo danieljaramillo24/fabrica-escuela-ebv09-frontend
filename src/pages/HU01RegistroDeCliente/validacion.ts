@@ -66,7 +66,14 @@ export function validarRegistro(valores: ValoresRegistro): ErroresRegistro {
   return errores;
 }
 
-export function construirSolicitud(valores: ValoresRegistro): RegistroRequest {
+// HU-25: sin la autorización de tratamiento de datos personales no se crea la cuenta
+export const MENSAJE_AUTORIZACION = 'Acepta el tratamiento de tus datos personales para crear la cuenta.';
+
+export function validarAutorizacion(acepta: boolean): string | undefined {
+  return acepta ? undefined : MENSAJE_AUTORIZACION;
+}
+
+export function construirSolicitud(valores: ValoresRegistro, autorizaTratamientoDatos: boolean): RegistroRequest {
   const telefono = valores.telefono.trim();
   return {
     nombre: valores.nombre.trim(),
@@ -75,6 +82,7 @@ export function construirSolicitud(valores: ValoresRegistro): RegistroRequest {
     contrasena: valores.contrasena,
     confirmarContrasena: valores.confirmarContrasena,
     ...(telefono ? { telefono } : {}),
+    autorizaTratamientoDatos,
   };
 }
 
@@ -82,8 +90,4 @@ export function esCampoRegistro(clave: string): clave is CampoRegistro {
   return (CAMPOS_REGISTRO as string[]).includes(clave);
 }
 
-// El backend responde en texto plano "Ya existe una cuenta registrada con ese correo".
-// Si el texto cambiara, simplemente se mostraría el mensaje tal cual (sin el enlace a login).
-export function esCorreoDuplicado(mensaje: string): boolean {
-  return /ya existe una cuenta/i.test(mensaje);
-}
+export { esCorreoDuplicado } from '../../utils/validaciones';

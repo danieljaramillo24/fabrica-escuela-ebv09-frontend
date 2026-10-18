@@ -38,8 +38,6 @@ export class ApiError extends Error {
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
-  /** JWT de la sesión (HU-02). Se envía como `Authorization: Bearer`. */
-  token?: string | null;
   signal?: AbortSignal;
 }
 
@@ -89,11 +87,13 @@ async function construirError(response: Response): Promise<ApiError> {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, token, signal } = options;
+  const { method = 'GET', body, signal } = options;
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (token) headers.Authorization = `Bearer ${token}`;
+  // Defensa contra CSRF: un formulario de otro sitio no puede añadir cabeceras propias, y el
+  // backend puede exigir esta en las peticiones que cambian datos (ver security.md).
+  if (method !== 'GET') headers['X-Requested-With'] = 'XMLHttpRequest';
 
   let response: Response;
   try {
@@ -101,6 +101,9 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      // La sesión es una cookie HttpOnly: el navegador la envía solo si se le pide (también
+      // entre dominios, p. ej. dos servicios de Render, con CORS y `allowCredentials` en el backend)
+      credentials: 'include',
       signal,
     });
   } catch (error) {

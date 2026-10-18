@@ -10,19 +10,32 @@ interface EnlaceNav {
   texto: string;
 }
 
-// Solo se muestran destinos que ya existen en el Sprint 1. "Mis citas", "Ayuda" y "Perfil" del
-// prototipo llegan con HU-13, la ayuda y HU-03.
+// Cada rol ve solo los destinos que puede usar (HU-24). Es una ayuda de experiencia: el servidor
+// vuelve a comprobar el rol en cada petición.
 function enlacesPorRol(rol: Rol | null): EnlaceNav[] {
   if (rol === 'ROLE_ESPECIALISTA') {
     return [
       { a: RUTAS.registrarEspecialidad, texto: 'Mis especialidades' },
+      { a: RUTAS.editarEspecialidad, texto: 'Editar especialidades' },
       { a: RUTAS.horarios, texto: 'Mi agenda' },
+      { a: RUTAS.gestionAgenda, texto: 'Gestión de agenda' },
+      { a: RUTAS.perfil, texto: 'Mi perfil' },
     ];
   }
   if (rol === 'ROLE_USUARIO') {
     return [
       { a: RUTAS.especialidades, texto: 'Especialidades' },
+      { a: RUTAS.disponibilidad, texto: 'Disponibilidad' },
       { a: RUTAS.solicitarCita, texto: 'Solicitar cita' },
+      { a: RUTAS.misCitas, texto: 'Mis citas' },
+      { a: RUTAS.perfil, texto: 'Mi perfil' },
+    ];
+  }
+  if (rol === 'ROLE_ADMIN') {
+    return [
+      { a: RUTAS.especialidades, texto: 'Especialidades' },
+      { a: RUTAS.registrarEspecialista, texto: 'Registrar especialista' },
+      { a: RUTAS.perfil, texto: 'Mi perfil' },
     ];
   }
   return [{ a: RUTAS.especialidades, texto: 'Especialidades' }];
@@ -32,7 +45,7 @@ const CLASE_ENLACE =
   'text-sm font-medium leading-[normal] rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070]';
 
 export default function Layout() {
-  const { sesion, cerrarSesion } = useAuth();
+  const { sesion, avisoSesion, cerrarSesion } = useAuth();
   const navegar = useNavigate();
   const { pathname } = useLocation();
   const principalRef = useRef<HTMLElement>(null);
@@ -45,6 +58,11 @@ export default function Layout() {
       principalRef.current?.focus();
     }
   }, [pathname]);
+
+  // Si la sesión se cerró sola (inactividad), se lleva a iniciar sesión para que la persona vea el aviso
+  useEffect(() => {
+    if (!sesion && avisoSesion && pathname !== RUTAS.login) navegar(RUTAS.login, { replace: true });
+  }, [sesion, avisoSesion, pathname, navegar]);
 
   function salir() {
     cerrarSesion();
