@@ -1,0 +1,29 @@
+# Blueprint de Render para el frontend (sitio estático). Render ejecuta el build y publica dist/.
+# El backend (Spring Boot) lo despliega el otro equipo, también en Render, como servicio aparte.
+services:
+  - type: web
+    name: vitalis-frontend
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      # URL pública del backend en Render, sin barra final. Se define en el panel de Render.
+      - key: VITE_API_BASE_URL
+        sync: false
+    # Con BrowserRouter, recargar o abrir directo /mis-citas daría 404 sin esta reescritura
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

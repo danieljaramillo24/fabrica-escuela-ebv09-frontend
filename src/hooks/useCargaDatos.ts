@@ -19,6 +19,8 @@ export function useCargaDatos<T>(cargar: (signal: AbortSignal) => Promise<T>, de
 
   useEffect(() => {
     const controlador = new AbortController();
+    // Marcar "cargando" al empezar cada carga es justo el propósito de este hook
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEstado((previo) => ({ ...previo, cargando: true, error: null }));
 
     cargar(controlador.signal)
