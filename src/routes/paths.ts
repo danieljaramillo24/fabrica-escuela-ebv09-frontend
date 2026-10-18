@@ -9,6 +9,13 @@ export const RUTAS = {
   registrarEspecialidad: '/registrar-especialidad',
   horarios: '/horarios',
   solicitarCita: '/solicitar-cita',
+  perfil: '/perfil',
+  misCitas: '/mis-citas',
+  reprogramarCita: '/reprogramar-cita',
+  disponibilidad: '/disponibilidad',
+  gestionAgenda: '/gestion-agenda',
+  editarEspecialidad: '/editar-especialidad',
+  registrarEspecialista: '/registrar-especialista',
 } as const;
 
 // Pantalla a la que se lleva a cada rol después de iniciar sesión
