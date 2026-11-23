@@ -130,10 +130,10 @@ export default function HU22ModificarHorario() {
               <caption className="sr-only">Próximos horarios de tu agenda, con su estado y la acción disponible</caption>
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-semibold">Fecha</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Horario</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Estado</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Acción</th>
+                  <th scope="col" className="px-2 py-3 sm:px-4 font-semibold">Fecha</th>
+                  <th scope="col" className="px-2 py-3 sm:px-4 font-semibold">Horario</th>
+                  <th scope="col" className="px-2 py-3 sm:px-4 font-semibold">Estado</th>
+                  <th scope="col" className="px-2 py-3 sm:px-4 font-semibold">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,14 +142,14 @@ export default function HU22ModificarHorario() {
                     key={horario.idHorario}
                     className={`border-t border-slate-300 ${horario.idHorario === actual?.idHorario ? 'bg-slate-100' : ''}`}
                   >
-                    <td className="px-4 py-3 text-slate-900 font-medium">{fechaCorta(horario.fecha)}</td>
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-2 py-3 sm:px-4 text-slate-900 font-medium">{fechaCorta(horario.fecha)}</td>
+                    <td className="px-2 py-3 sm:px-4 text-slate-700">
                       {hora12(horario.horaInicio)} – {hora12(horario.horaFin)}
                     </td>
-                    <td className={`px-4 py-3 font-medium ${CLASE_ESTADO_HORARIO[horario.estado]}`}>
+                    <td className={`px-2 py-3 sm:px-4 font-medium ${CLASE_ESTADO_HORARIO[horario.estado]}`}>
                       {ETIQUETA_ESTADO_HORARIO[horario.estado]}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3 sm:px-4">
                       <button
                         type="button"
                         aria-label={`Modificar horario ${descripcionDe(horario)}`}
