@@ -18,6 +18,7 @@ function enlacesPorRol(rol: Rol | null): EnlaceNav[] {
       { a: RUTAS.registrarEspecialidad, texto: 'Mis especialidades' },
       { a: RUTAS.editarEspecialidad, texto: 'Editar especialidades' },
       { a: RUTAS.horarios, texto: 'Mi agenda' },
+      { a: RUTAS.modificarHorario, texto: 'Modificar horario' },
       { a: RUTAS.gestionAgenda, texto: 'Gestión de agenda' },
       { a: RUTAS.perfil, texto: 'Mi perfil' },
     ];
@@ -25,6 +26,7 @@ function enlacesPorRol(rol: Rol | null): EnlaceNav[] {
   if (rol === 'ROLE_USUARIO') {
     return [
       { a: RUTAS.especialidades, texto: 'Especialidades' },
+      { a: RUTAS.especialistas, texto: 'Especialistas' },
       { a: RUTAS.disponibilidad, texto: 'Disponibilidad' },
       { a: RUTAS.solicitarCita, texto: 'Solicitar cita' },
       { a: RUTAS.misCitas, texto: 'Mis citas' },
@@ -35,6 +37,8 @@ function enlacesPorRol(rol: Rol | null): EnlaceNav[] {
     return [
       { a: RUTAS.especialidades, texto: 'Especialidades' },
       { a: RUTAS.registrarEspecialista, texto: 'Registrar especialista' },
+      { a: RUTAS.editarEspecialista, texto: 'Editar especialista' },
+      { a: RUTAS.informeGeneral, texto: 'Informe general' },
       { a: RUTAS.perfil, texto: 'Mi perfil' },
     ];
   }

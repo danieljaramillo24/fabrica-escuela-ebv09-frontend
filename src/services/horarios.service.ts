@@ -144,3 +144,31 @@ export function bloquearHorario(idHorario: number, signal?: AbortSignal): Promis
 export function desbloquearHorario(idHorario: number, signal?: AbortSignal): Promise<Horario> {
   return cambiarBloqueo(idHorario, 'desbloquear', signal);
 }
+
+const MENSAJE_MODIFICAR_CON_CITA =
+  'Este horario tiene citas futuras reservadas. Podrás modificarlo cuando esas citas se cancelen o se reprogramen.';
+
+// HU-22 — PUT /api/horarios/{id} con { fecha, horaInicio, horaFin } (ROLE_ESPECIALISTA, solo su
+// agenda). 200 con el horario actualizado, que se refleja de inmediato en la disponibilidad;
+// 400 { campo: mensaje } si los datos son inválidos; 403 si no es su horario; 409 si tiene citas
+// futuras reservadas o si el nuevo rango se superpone con otro horario.
+export async function modificarHorario(idHorario: number, data: HorarioRequest, signal?: AbortSignal): Promise<Horario> {
+  if (MODO_SIMULADO) {
+    const sesion = sesionSimulada();
+    const horario = horarios.find((h) => h.idHorario === idHorario);
+    if (!horario || horario.idEspecialista !== sesion.idUsuario) {
+      throw await demora(new ApiError(403, 'No tienes permiso para realizar esta acción.'), signal);
+    }
+    if (horario.estado === 'RESERVADO') throw await demora(new ApiError(409, MENSAJE_MODIFICAR_CON_CITA), signal);
+    const choca = horarios.some(
+      (h) => h.idHorario !== idHorario && h.idEspecialista === sesion.idUsuario && h.fecha === data.fecha && seSuperponen(h, data),
+    );
+    if (choca) throw await demora(new ApiError(409, MENSAJE_SUPERPUESTO), signal);
+    Object.assign(horario, data);
+    return demora(aHorarioPublico(horario), signal);
+  }
+
+  const modificado = aHorario(await request<unknown>(`/api/horarios/${idHorario}`, { method: 'PUT', body: data, signal }));
+  if (!modificado) throw new ApiError(502, MENSAJE_REGISTRO);
+  return modificado;
+}

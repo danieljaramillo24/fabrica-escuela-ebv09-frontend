@@ -47,6 +47,12 @@ export function fechaCorta(iso: string): string {
   return `${DIAS[fecha.getUTCDay()]} ${String(fecha.getUTCDate()).padStart(2, '0')} ${MESES[fecha.getUTCMonth()].slice(0, 3)}`;
 }
 
+/** "2026-09-08" → "08/09/2026" (con el año, para rangos de fechas en informes) */
+export function fechaNumerica(iso: string): string {
+  const [anio, mes, dia] = iso.split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
 /** "14:30" → "02:30 pm" */
 export function hora12(hhmm: string): string {
   const [horas, minutos] = hhmm.split(':').map(Number);

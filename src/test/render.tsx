@@ -14,16 +14,21 @@ interface Opciones {
   ruta?: string;
   verificando?: boolean;
   avisoSesion?: string | null;
+  /** Patrón de la ruta, para pantallas con parámetros (por ejemplo "/especialistas/:idEspecialista"). Por defecto cualquiera. */
+  patron?: string;
 }
 
 /** Pinta una pantalla con la sesión indicada y un router en memoria. Devuelve los espías del contexto. */
-export function renderConSesion(ui: ReactElement, { sesion = SESION_USUARIO, ruta = '/', verificando = false, avisoSesion = null }: Opciones = {}) {
+export function renderConSesion(
+  ui: ReactElement,
+  { sesion = SESION_USUARIO, ruta = '/', verificando = false, avisoSesion = null, patron = '*' }: Opciones = {},
+) {
   const contexto = { sesion, verificando, avisoSesion, iniciarSesion: vi.fn(), cerrarSesion: vi.fn() };
   const resultado = render(
     <AuthContext.Provider value={contexto}>
       <MemoryRouter initialEntries={[ruta]}>
         <Routes>
-          <Route path="*" element={ui} />
+          <Route path={patron} element={ui} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,

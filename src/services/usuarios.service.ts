@@ -2,7 +2,9 @@ import type { EspecialistaRequest, Perfil, PerfilRequest, RegistroRequest, Usuar
 import { ApiError, request } from './api';
 import { MODO_SIMULADO } from './modo';
 import {
+  ESPECIALISTAS_IDS,
   PERFILES,
+  REGISTROS_MEDICOS,
   correosRegistrados,
   demora,
   leerSesionSimulada,
@@ -93,6 +95,8 @@ export async function registrarEspecialista(data: EspecialistaRequest, signal?: 
     correosRegistrados().add(data.correo.toLowerCase());
     const idUsuario = nuevoIdUsuario();
     PERFILES[idUsuario] = { idUsuario, nombre: data.nombre, apellido: data.apellido, correo: data.correo, telefono: data.telefono ?? null };
+    ESPECIALISTAS_IDS.add(idUsuario);
+    if (data.registroMedico) REGISTROS_MEDICOS[idUsuario] = data.registroMedico;
     return demora({ ...PERFILES[idUsuario] }, signal);
   }
   const perfil = aPerfil(await request<unknown>('/api/especialistas', { method: 'POST', body: data, signal }));

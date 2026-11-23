@@ -5,6 +5,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
+    // Las pruebas usan servicios reales con fetch simulado: el modo simulado de desarrollo (.env) no debe afectarlas
+    env: { VITE_MODO_SIMULADO: 'false' },
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
