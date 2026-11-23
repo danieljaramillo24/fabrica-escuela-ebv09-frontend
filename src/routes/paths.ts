@@ -16,7 +16,19 @@ export const RUTAS = {
   gestionAgenda: '/gestion-agenda',
   editarEspecialidad: '/editar-especialidad',
   registrarEspecialista: '/registrar-especialista',
+  // Sprint 3
+  recuperarContrasena: '/recuperar-contrasena',
+  restablecerContrasena: '/restablecer-contrasena',
+  detalleEspecialidad: '/especialidades/:idEspecialidad',
+  especialistas: '/especialistas',
+  detalleEspecialista: '/especialistas/:idEspecialista',
+  editarEspecialista: '/editar-especialista',
+  modificarHorario: '/modificar-horario',
+  informeGeneral: '/informe-general',
 } as const;
+
+export const rutaDetalleEspecialidad = (idEspecialidad: number): string => `${RUTAS.especialidades}/${idEspecialidad}`;
+export const rutaDetalleEspecialista = (idEspecialista: number): string => `${RUTAS.especialistas}/${idEspecialista}`;
 
 // Pantalla a la que se lleva a cada rol después de iniciar sesión
 export function rutaInicioPorRol(rol: Rol): string {

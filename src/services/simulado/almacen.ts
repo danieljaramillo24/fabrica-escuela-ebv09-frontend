@@ -42,7 +42,12 @@ export const PERFILES: Record<number, Perfil> = {
   1: { idUsuario: 1, nombre: 'Admin', apellido: 'Vitalis', correo: 'admin@vitalis.com', telefono: null },
   101: { idUsuario: 101, nombre: 'Carlos', apellido: 'Ramírez', correo: 'especialista@vitalis.com', telefono: '3001112233' },
   201: { idUsuario: 201, nombre: 'Ana', apellido: 'Pérez', correo: 'ana.perez@correo.com', telefono: '3001234567' },
+  102: { idUsuario: 102, nombre: 'Laura', apellido: 'Gómez', correo: 'laura.gomez@vitalis.com', telefono: '3009876543' },
 };
+
+// HU-20 y HU-21: qué cuentas de PERFILES son especialistas, y su registro médico
+export const ESPECIALISTAS_IDS = new Set<number>([101, 102]);
+export const REGISTROS_MEDICOS: Record<number, string> = { 101: 'RM-1001', 102: 'RM-1002' };
 
 export interface HorarioAlmacenado extends Horario {
   idEspecialista: number;

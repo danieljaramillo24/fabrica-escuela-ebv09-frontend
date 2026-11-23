@@ -153,6 +153,10 @@ export default function HU02InicioDeSesion() {
           {enviando ? 'Iniciando sesión…' : 'Iniciar sesión'}
         </button>
 
+        <Link to={RUTAS.recuperarContrasena} className="text-[#1D6070] text-[13px] font-medium underline">
+          ¿Olvidaste tu contraseña?
+        </Link>
+
         <p className="text-[#1D6070] text-[13px] font-medium">
           ¿No tienes cuenta?{' '}
           <Link to={RUTAS.registro} className="text-[#1D6070] underline font-medium">

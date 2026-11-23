@@ -19,3 +19,15 @@ export interface Sesion {
 
 /** Respuesta de POST /api/auth/login y de GET /api/auth/me (la cookie viaja en `Set-Cookie`) */
 export type LoginResponse = Sesion;
+
+/** HU-05 — POST /api/auth/recuperar-contrasena. El servidor responde igual exista o no el correo */
+export interface RecuperacionRequest {
+  correo: string;
+}
+
+/** HU-05 — POST /api/auth/restablecer-contrasena. El `token` es el del enlace que llegó al correo */
+export interface RestablecerContrasenaRequest {
+  token: string;
+  contrasena: string;
+  confirmarContrasena: string;
+}

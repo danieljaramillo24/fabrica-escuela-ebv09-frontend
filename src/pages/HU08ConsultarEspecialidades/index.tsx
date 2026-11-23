@@ -4,7 +4,7 @@ import FormField from '../../components/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import { useCargaDatos } from '../../hooks/useCargaDatos';
 import { useTitulo } from '../../hooks/useTitulo';
-import { RUTAS } from '../../routes/paths';
+import { RUTAS, rutaDetalleEspecialidad } from '../../routes/paths';
 import { listarEspecialidades } from '../../services/especialidades.service';
 import type { Especialidad } from '../../types/especialidad';
 
@@ -106,6 +106,13 @@ export default function HU08ConsultarEspecialidades() {
                       Especialista: {especialidad.especialista.nombre} {especialidad.especialista.apellido}
                     </p>
                   )}
+                  <Link
+                    to={rutaDetalleEspecialidad(especialidad.idEspecialidad)}
+                    aria-label={`Ver detalle de ${especialidad.nombreEspecialidad}`}
+                    className="self-start text-[#1D6070] text-sm font-semibold underline rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1D6070]"
+                  >
+                    Ver detalle
+                  </Link>
                   {!esEspecialista && (
                     <Link
                       to={`${RUTAS.solicitarCita}?especialidad=${especialidad.idEspecialidad}`}

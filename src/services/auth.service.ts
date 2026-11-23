@@ -1,4 +1,10 @@
-import type { LoginRequest, LoginResponse, Sesion } from '../types/auth';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RecuperacionRequest,
+  RestablecerContrasenaRequest,
+  Sesion,
+} from '../types/auth';
 import { ApiError, request } from './api';
 import { MODO_SIMULADO } from './modo';
 import { esSesion } from './sesion';
@@ -75,5 +81,51 @@ export async function cerrarSesionEnServidor(): Promise<void> {
     await request<void>('/api/auth/logout', { method: 'POST' });
   } catch {
     // Se ignora a propósito: ver comentario arriba
+  }
+}
+
+const MENSAJE_ENLACE =
+  'El enlace de recuperación ya no es válido: expiró o ya se usó. Solicita uno nuevo para continuar.';
+const MENSAJE_LIMITE =
+  'Hiciste varias solicitudes seguidas. Espera unos minutos antes de intentarlo de nuevo.';
+
+// HU-05 — POST /api/auth/recuperar-contrasena con { correo }. El servidor responde 202 o 204 igual
+// exista o no la cuenta, y envía al correo un enlace de un solo uso (30 minutos). Aquí tampoco se
+// distingue: si el servidor llegara a responder 404 se trata como enviado, para no revelar qué
+// correos están registrados (requisito no funcional de la HU).
+export async function solicitarRecuperacion(data: RecuperacionRequest, signal?: AbortSignal): Promise<void> {
+  if (MODO_SIMULADO) {
+    await demora(undefined, signal);
+    return;
+  }
+  try {
+    await request<void>('/api/auth/recuperar-contrasena', { method: 'POST', body: data, signal });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return;
+    if (error instanceof ApiError && error.status === 429) throw new ApiError(429, MENSAJE_LIMITE);
+    throw error;
+  }
+}
+
+// HU-05 — POST /api/auth/restablecer-contrasena con { token, contrasena, confirmarContrasena }.
+// 204 si se actualizó (el servidor invalida el enlace); 400 con { campo: mensaje } si la clave no
+// cumple las reglas; 400 con texto, 404 o 410 si el enlace expiró, ya se usó o no existe. En modo
+// simulado el token "expirado" imita un enlace vencido.
+export async function restablecerContrasena(data: RestablecerContrasenaRequest, signal?: AbortSignal): Promise<void> {
+  if (MODO_SIMULADO) {
+    if (data.token === 'expirado') throw await demora(new ApiError(410, MENSAJE_ENLACE), signal);
+    await demora(undefined, signal);
+    return;
+  }
+  try {
+    await request<void>('/api/auth/restablecer-contrasena', { method: 'POST', body: data, signal });
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    const enlaceInvalido =
+      error.status === 404 ||
+      error.status === 410 ||
+      (error.status === 400 && Object.keys(error.fieldErrors).length === 0);
+    if (enlaceInvalido) throw new ApiError(410, MENSAJE_ENLACE);
+    throw error;
   }
 }

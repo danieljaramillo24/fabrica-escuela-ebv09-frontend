@@ -114,7 +114,9 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   if (!response.ok) throw await construirError(response);
   if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  // Un 202 u otro éxito sin cuerpo (por ejemplo "te enviamos un correo", HU-05) no es JSON
+  const cuerpo = await response.text();
+  return (cuerpo ? JSON.parse(cuerpo) : undefined) as T;
 }
 
 /** Texto seguro para mostrar al usuario a partir de cualquier error capturado. */
